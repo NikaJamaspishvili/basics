@@ -2,6 +2,8 @@
 
 A collection of projects and experiments focused on mastering the fundamentals of full-stack development. This repository tracks my progress in building high-performance web applications using the React and Node.js ecosystem.
 
+KEY POINT: THIS REPO REPRESENTS MY LEARNING JOURNEY.
+
 # 🚀 Projects Included
 
 ## 💬 Simple Messenger App
