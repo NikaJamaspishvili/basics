@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build": "npx esbuild main.jsx --bundle --outfile=dist/bundle.js --inject:./index.js --jsx-factory=myCreateElement"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.0"
+  }
+}
