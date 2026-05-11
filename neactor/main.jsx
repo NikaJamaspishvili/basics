@@ -1,5 +1,5 @@
 /** @jsx myCreateElement */
-import { App } from "./app";
-import { render } from ".";
+import { App } from "./app.jsx";
+import { render, myCreateElement } from "./index.js";
 
 render(App(), document.getElementById("root"));

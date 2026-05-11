@@ -1,4 +1,4 @@
-import { Child } from "./child";
+import { myCreateElement } from "./index.js";
 
 export const App = () => (
   <div style={{ backgroundColor: "red", color: "blue" }}>
@@ -9,6 +9,6 @@ export const App = () => (
       <h3>hello again</h3>
     </section>
 
-    <Child style={{ backgroundColor: "green" }} />
+    <p>my name is anton</p>
   </div>
 );
