@@ -1,15 +1,32 @@
 import { createServer } from "http";
-import { readFileSync } from "fs";
+import fs from "fs";
+import path from "path";
+
+const mimeTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".map": "application/json; charset=utf-8",
+};
 
 export const preview = async () => {
-  createServer(async (req, res) => {
-    if (req.url === "/") {
-      res.writeHead(200, { "content-type": "text/html" });
-      res.end(readFileSync("./dist/index.html", "utf-8"));
-    }
-    if (req.url.endsWith(".js")) {
-      res.writeHead(200, { "content-type": "application/javascript" });
-      res.end(readFileSync("./dist/bundle.js", "utf-8"));
-    }
+  createServer((req, res) => {
+    const requestPath = req.url === "/" ? "/index.html" : req.url;
+    const filePath = path.join("dist", requestPath);
+
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Not Found");
+        return;
+      }
+
+      const ext = path.extname(filePath);
+      res.writeHead(200, {
+        "Content-Type": mimeTypes[ext] || "application/octet-stream",
+      });
+      res.end(data);
+    });
   }).listen(4000, () => console.log("prod server is running on port: 4000"));
 };

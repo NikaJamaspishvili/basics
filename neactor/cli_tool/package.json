@@ -1,11 +1,11 @@
 {
-  "name": "cli_tool_for_neactor",
-  "version": "1.0.0",
+  "name": "neactor-cli",
+  "version": "1.0.6",
   "description": "",
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "devserver.js",
+  "main": "./cli.js",
   "bin": {
     "neactor": "./cli.js"
   },

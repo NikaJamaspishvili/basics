@@ -1,6 +1,10 @@
 import * as esbuild from "esbuild";
 import fs from "fs";
 import http from "http";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const jsxShimPath = fileURLToPath(new URL("./jsx-shim.js", import.meta.url));
 
 export const dev = async () => {
   const clients = new Set();
@@ -10,7 +14,11 @@ export const dev = async () => {
     bundle: true,
     outdir: "dist",
     sourcemap: true,
-    jsxFactory: "myCreateElement",
+    format: "esm",
+    jsx: "transform",
+    jsxFactory: "neactorCreateElement",
+    jsxImportSource: "neactor-dom",
+    inject: [jsxShimPath],
     plugins: [
       {
         name: "live-reload",
@@ -27,13 +35,20 @@ export const dev = async () => {
 
   let html = fs.readFileSync("index.html", "utf8");
   html = html.replace(
-    /<script src="[^"]+"><\/script>/,
-    `<script src="./main.js"></script>`,
+    /<script type="module" src="[^"]+"><\/script>/,
+    `<script type="module" src="./main.js"></script>`,
   );
   fs.mkdirSync("dist", { recursive: true });
   fs.writeFileSync("dist/index.html", html);
 
-  // simple server that serves dist/ + SSE endpoint
+  const mimeTypes = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".map": "application/json; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+  };
+
   http
     .createServer((req, res) => {
       if (req.url === "/__reload") {
@@ -47,15 +62,20 @@ export const dev = async () => {
         return;
       }
 
-      // serve files from dist/
-      const filePath = `dist${req.url === "/" ? "/index.html" : req.url}`;
+      const requestPath = req.url === "/" ? "/index.html" : req.url;
+      const filePath = path.join("dist", requestPath);
+
       fs.readFile(filePath, (err, data) => {
         if (err) {
-          res.writeHead(404);
-          res.end();
+          res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+          res.end("Not Found");
           return;
         }
-        res.writeHead(200);
+
+        const ext = path.extname(filePath);
+        res.writeHead(200, {
+          "Content-Type": mimeTypes[ext] || "application/octet-stream",
+        });
         res.end(data);
       });
     })

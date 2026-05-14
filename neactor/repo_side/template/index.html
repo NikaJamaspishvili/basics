@@ -7,11 +7,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      new EventSource("/__reload").addEventListener("message", () =>
-        location.reload(),
-      );
-    </script>
-    <script src="./src/main.jsx"></script>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>

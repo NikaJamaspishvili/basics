@@ -14,8 +14,8 @@ if (command === "dev") {
 } else {
   console.log(`
 Usage:
-  mybundle dev      start dev server
-  mybundle build    production build
-  mybundle preview  preview production build
+  neactor dev      start dev server
+  neactor build    production build
+  neactor preview  preview production build
   `);
 }

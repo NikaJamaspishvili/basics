@@ -1,0 +1,17 @@
+{
+  "name": "repo_side",
+  "version": "latest",
+  "description": "Super Simple Js Framework",
+  "license": "ISC",
+  "author": "Nika Jamaspishvili",
+  "type": "module",
+  "dependencies": {
+    "neactor-dom": "latest",
+    "neactor-cli": "latest"
+  },
+  "scripts": {
+    "dev": "neactor dev",
+    "build": "neactor build",
+    "preview": "neactor preview"
+  }
+}

@@ -1,12 +1,13 @@
 {
-  "scripts": {
-    "dev": "neactor dev",
-    "preview": "neactor preview",
-    "build": "neactor build"
-  },
+  "name": "create-neactor",
+  "version": "1.0.9",
   "type": "module",
-  "dependencies": {
-    "esbuild": "^0.28.0",
-    "neactor": "*"
-  }
+  "bin": {
+    "create-neactor": "./assemble.js"
+  },
+  "files": [
+    "assemble.js",
+    "template",
+    "template/.gitignore"
+  ]
 }

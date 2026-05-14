@@ -1,0 +1,9 @@
+{
+  "name": "neactor-dom",
+  "version": "1.0.2",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}
