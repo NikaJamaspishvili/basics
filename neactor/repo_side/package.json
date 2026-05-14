@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "dev": "neactor dev",
+    "preview": "neactor preview",
+    "build": "neactor build"
+  },
+  "type": "module",
+  "dependencies": {
+    "esbuild": "^0.28.0",
+    "neactor": "*"
+  }
+}

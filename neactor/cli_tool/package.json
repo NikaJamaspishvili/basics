@@ -1,0 +1,15 @@
+{
+  "name": "cli_tool_for_neactor",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "devserver.js",
+  "bin": {
+    "neactor": "./cli.js"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.0"
+  }
+}
