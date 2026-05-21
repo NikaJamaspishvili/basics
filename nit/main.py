@@ -1,6 +1,22 @@
 import argparse
 import json
 from pathlib import Path
+import hashlib
+
+
+class GitObject:
+    def __init__(self, obj_type: str, content: bytes):
+        self.type = obj_type
+        self.content = content
+
+    def hash(self) -> str:
+        header = (
+            f"{self.type} {len(self.content)}\0".encode()
+        )  # this turns the text to raw bytes
+
+        return hashlib.sha1(
+            header + self.content
+        ).hexdigest()  # this hashes the raw header bytes + content bytes and returns readable hex string, example: "a34fwdw23dg3"
 
 
 class Repository:
@@ -29,16 +45,37 @@ class Repository:
 
         return True
 
+    def add_file(self, path: str) -> None:
+        full_path = self.cur_dir / path
+
+        if not full_path.exists():
+            return FileNotFoundError("Path Doesn't exist")
+
+        content = full_path.read_bytes()
+
+    def add_path(self, file_path: str) -> None:
+        full_path = self.cur_dir / file_path
+
+        if not full_path.exists():
+            raise ValueError(f"Path {file_path} Not Found")
+
+        if full_path.is_file():
+            self.add_file()
+        elif full_path.is_dir():
+            return
+            # search directory for all its nested files and add them
+
 
 def main():
     parser = argparse.ArgumentParser(prog="nit", description="Welcome To NIT")
 
     sub_parser = parser.add_subparsers(dest="command", help="Available Commands")
 
-    init_parser = sub_parser.add_parser("init", help="Initialise New Repository")
-    add_parser = sub_parser.add_parser("add", help="Add File To Git")
+    sub_parser.add_parser("init", help="Initialise New Repository")
+    add_parser = sub_parser.add_parser("add", help="Add Files To Git")
 
-    add_parser.add_argument("filename", help="filename user wants to add")
+    add_parser.add_argument("filename", nargs="+", help="Files To Add In Staging Area")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -47,13 +84,17 @@ def main():
 
     try:
         repo = Repository()
-        if args.command == "init":
-            init_res = repo.init()
+        match args.command:
+            case "init":
+                init_res = repo.init()
 
-            if init_res:
-                print(".nit folder created succesfully")
-            else:
-                print(".nit folder already exists!")
+                if init_res:
+                    print(".nit folder created succesfully")
+                else:
+                    print(".nit folder already exists!")
+            case "add":
+                for filename in args.filename:
+                    repo.add_path(file_path=filename)
 
     except Exception as e:
         print("exception:", e)
