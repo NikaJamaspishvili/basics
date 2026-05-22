@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 import hashlib
 
+# commit
+
 
 class GitObject:
     def __init__(self, obj_type: str, content: bytes):
