@@ -2,6 +2,7 @@ import argparse
 import json
 from pathlib import Path
 import hashlib
+import zlib
 
 # commit
 
@@ -19,6 +20,33 @@ class GitObject:
         return hashlib.sha1(
             header + self.content
         ).hexdigest()  # this hashes the raw header bytes + content bytes and returns readable hex string, example: "a34fwdw23dg3"
+
+    def serialize(self) -> bytes:
+        header = (
+            f"{self.type} {len(self.content)}\0".encode()
+        )  # this turns the text to raw bytes
+        return zlib.compress(header + self.content)
+
+    @classmethod
+    def deserialize(cls, data: bytes) -> "GitObject":
+        data = zlib.decompress(data)
+        null_idx = data.find(b"\0")
+        header = data[:null_idx]
+        content = data[null_idx + 1 :]
+
+        # header also has type and length of the content encoded
+
+        type, _ = header.split(" ")
+
+        return cls(type, content)
+
+
+class Blob(GitObject):
+    def __init__(self, content):
+        super().__init__("Blob", content)
+
+    def get_content(self) -> bytes:
+        return self.content
 
 
 class Repository:
@@ -43,9 +71,37 @@ class Repository:
         self.refs_head.mkdir()
 
         self.HEAD.write_text("refs: refs/heads/main")
-        self.index.write_text(json.dumps({}, indent=2))
+        self.save_index({})
 
         return True
+
+    def store_object(self, obj) -> str:
+        obj_hash = obj.hash()
+
+        # as we know first we create folder with two characters of the hash
+        obj_dir = self.nit_objects / obj_hash[:2]
+
+        if not obj_dir.exists():
+            obj_dir.mkdir()
+
+        obj_file = obj_dir / obj_hash[2:]
+
+        if not obj_file.exists():
+            obj_file.write_bytes(obj.serialize())
+
+        return obj_hash
+
+    def load_index(self) -> dict[str, str]:
+        if not self.index.exists():
+            return {}
+
+        try:
+            return json.loads(self.index.read_text())
+        except:
+            return {}
+
+    def save_index(self, index_file: dict[str, str]):
+        self.index.write_text(json.dumps(index_file, indent=2))
 
     def add_file(self, path: str) -> None:
         full_path = self.cur_dir / path
@@ -55,6 +111,23 @@ class Repository:
 
         content = full_path.read_bytes()
 
+        blob = Blob(content)
+
+        # save blob in the .git/objects folder
+        blob_hash = self.store_object(blob)
+
+        index_file_dict = self.load_index()
+
+        index_file_dict[str(path)] = blob_hash
+
+        self.save_index(index_file_dict)
+
+        print(f"Added {path}")
+
+    def add_directory(self):
+        # now we have to handle the directory staging
+        return
+
     def add_path(self, file_path: str) -> None:
         full_path = self.cur_dir / file_path
 
@@ -62,7 +135,7 @@ class Repository:
             raise ValueError(f"Path {file_path} Not Found")
 
         if full_path.is_file():
-            self.add_file()
+            self.add_file(full_path)
         elif full_path.is_dir():
             return
             # search directory for all its nested files and add them
