@@ -12,4 +12,4 @@ A collection of projects and experiments focused on mastering the fundamentals o
 
 A real-time messaging platform built to explore the mechanics of web communication. Implements **WebSockets (WS/WSS)** and **Node.js Buffers** to manage full-duplex communication and binary data encoding for low-latency, real-time message broadcasting.
 
-**Tech Highlights:** Node.js, `ws` library, React Hooks, and Event-driven architecture.
+**Tech Highlights:** Node.js, `ws` library, React Hooks, and Event-driven architecture..
