@@ -124,9 +124,21 @@ class Repository:
 
         print(f"Added {path}")
 
-    def add_directory(self):
-        # now we have to handle the directory staging
-        return
+    def add_directory(self, path: str):
+        # take directory path and recursively traverse it in order to add every file in
+        full_path = self.cur_dir / path
+
+        if full_path.exists():
+            for file_path in full_path.rglob("*"):
+                if ".nit" in file_path.parts:
+                    continue
+                if file_path.is_file():
+                    relative_path = file_path.relative_to(self.cur_dir)
+                    print(f"adding file with path: {relative_path}")
+                    self.add_file(relative_path)
+
+        else:
+            print("folder doesn't exist")
 
     def add_path(self, file_path: str) -> None:
         full_path = self.cur_dir / file_path
@@ -137,10 +149,11 @@ class Repository:
         if full_path.is_file():
             self.add_file(full_path)
         elif full_path.is_dir():
-            return
+            self.add_directory(file_path)
             # search directory for all its nested files and add them
 
 
+##
 def main():
     parser = argparse.ArgumentParser(prog="nit", description="Welcome To NIT")
 
