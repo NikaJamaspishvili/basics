@@ -118,7 +118,21 @@ class Repository:
 
         index_file_dict = self.load_index()
 
-        index_file_dict[str(path)] = blob_hash
+        relative_path = full_path.relative_to(self.cur_dir)
+
+        directories = list(relative_path.parts[:-1])
+
+        if len(directories) == 0:
+            index_file_dict[str(relative_path)] = blob_hash
+        else:
+            dict = index_file_dict
+
+            for dir_path in directories:
+                if dir_path not in dict:
+                    dict[dir_path] = {}
+                dict = dict[dir_path]
+
+            dict[relative_path.parts[-1]] = blob_hash
 
         self.save_index(index_file_dict)
 
@@ -152,8 +166,15 @@ class Repository:
             self.add_directory(file_path)
             # search directory for all its nested files and add them
 
+    def commit(self, message: str) -> str:
+        # load dict of index file -> start from each of the subfolder bottom -> create trees for each subfolder coming up to the root folder.
+        # create one commit folder -> add the message of the commit -> change the refs/heads/main pointer to new commit message
 
-##
+        index_file_dict = self.load_index()
+
+        return "this and that file has been commited"
+
+
 def main():
     parser = argparse.ArgumentParser(prog="nit", description="Welcome To NIT")
 
@@ -161,6 +182,9 @@ def main():
 
     sub_parser.add_parser("init", help="Initialise New Repository")
     add_parser = sub_parser.add_parser("add", help="Add Files To Git")
+
+    commit_parser = sub_parser.add_parser("commit", description="Add commit changes")
+    commit_parser.add_argument("-m", required=True, help="Commit message")
 
     add_parser.add_argument("filename", nargs="+", help="Files To Add In Staging Area")
 
@@ -182,7 +206,10 @@ def main():
                     print(".nit folder already exists!")
             case "add":
                 for filename in args.filename:
+                    print(filename)
                     repo.add_path(file_path=filename)
+            case "commit":
+                print(args.m)
 
     except Exception as e:
         print("exception:", e)
