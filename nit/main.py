@@ -411,6 +411,35 @@ class Repository:
 
         print(f"working branch: {branch_name}")
 
+    def log(self) -> None:
+        branch_path = Path(self.active_branch())
+        commit_hash = branch_path.read_text().strip()
+
+        if not commit_hash:
+            print("No commits yet")
+            return
+
+        while commit_hash:
+            commit_file = Path(f".nit/objects/{commit_hash[:2]}/{commit_hash[2:]}")
+
+            if not commit_file.exists():
+                break
+
+            commit_data = GitObject.deserialize(commit_file.read_bytes()).content.decode()
+            commit_lines = commit_data.splitlines()
+
+            tree_line = commit_lines[0].strip() if len(commit_lines) > 0 else ""
+            parent_hash = commit_lines[1].strip() if len(commit_lines) > 1 else ""
+            message = commit_lines[2].strip() if len(commit_lines) > 2 else ""
+
+            print(f"commit {commit_hash}")
+            if tree_line:
+                print(tree_line)
+            print(f"    {message}")
+            print("")
+
+            commit_hash = parent_hash
+
 
 def main():
     parser = argparse.ArgumentParser(prog="nit", description="Welcome To NIT")
@@ -433,6 +462,7 @@ def main():
 
     sub_parser.add_parser("status", description="Check workspace status")
     sub_parser.add_parser("branch", description="Check current working branch")
+    sub_parser.add_parser("log", description="Show commit logs")
     args = parser.parse_args()
 
     if not args.command:
@@ -461,6 +491,8 @@ def main():
             case "branch":
                 branch = repo.active_branch().split("/")
                 print(f"Working branch: {branch[-1]}")
+            case "log":
+                repo.log()
 
     except Exception as e:
         print("exception:", e)
