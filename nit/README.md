@@ -11,6 +11,7 @@ Run commands from inside the `nit/` folder:
 - Check status: `python3 main.py status`
 - Commit staged changes: `python3 main.py commit -m "message"`
 - Create/switch branch: `python3 main.py checkout <branch>`
+- View commit history: `python3 main.py log`
 
 Example flow:
 `python3 main.py init && python3 main.py add . && python3 main.py status && python3 main.py commit -m "first commit"`
