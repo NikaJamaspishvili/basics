@@ -425,7 +425,9 @@ class Repository:
             if not commit_file.exists():
                 break
 
-            commit_data = GitObject.deserialize(commit_file.read_bytes()).content.decode()
+            commit_data = GitObject.deserialize(
+                commit_file.read_bytes()
+            ).content.decode()
             commit_lines = commit_data.splitlines()
 
             tree_line = commit_lines[0].strip() if len(commit_lines) > 0 else ""
@@ -496,6 +498,3 @@ def main():
 
     except Exception as e:
         print("exception:", e)
-
-
-main()
