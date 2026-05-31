@@ -431,10 +431,8 @@ def main():
 
     checkout_branch_parser.add_argument("branch", help="Branch name for checkout")
 
-    checkout_branch_parser = sub_parser.add_parser(
-        "status", description="Checkout branch"
-    )
-
+    sub_parser.add_parser("status", description="Check workspace status")
+    sub_parser.add_parser("branch", description="Check current working branch")
     args = parser.parse_args()
 
     if not args.command:
@@ -460,6 +458,9 @@ def main():
                 repo.checkout_branch(args.branch)
             case "status":
                 repo.status()
+            case "branch":
+                branch = repo.active_branch().split("/")
+                print(f"Working branch: {branch[-1]}")
 
     except Exception as e:
         print("exception:", e)
