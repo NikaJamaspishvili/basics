@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from pathlib import Path
 import hashlib
 import zlib
@@ -169,7 +170,7 @@ class Repository:
         full_path = self.cur_dir / path
 
         if not full_path.exists():
-            return FileNotFoundError("Path Doesn't exist")
+            raise FileNotFoundError("Path Doesn't exist")
 
         content = full_path.read_bytes()
 
@@ -198,32 +199,45 @@ class Repository:
 
         self.save_index(index_file_dict)
 
-    def add_directory(self, path: str):
-        # take directory path and recursively traverse it in order to add every file in
-        full_path = self.cur_dir / path
-
-        if full_path.exists():
-            for file_path in full_path.rglob("*"):
-                if ".nit" in file_path.parts:
-                    continue
-                if file_path.is_file():
-                    relative_path = file_path.relative_to(self.cur_dir)
-                    self.add_file(relative_path)
-
-        else:
-            print("folder doesn't exist")
-
-    def add_path(self, file_path: str) -> None:
-        full_path = self.cur_dir / file_path
+    def _tracked_paths_for_add(self, path: str) -> list[Path]:
+        full_path = (self.cur_dir / path).resolve()
 
         if not full_path.exists():
-            raise ValueError(f"Path {file_path} Not Found")
+            raise ValueError(f"Path {path} Not Found")
 
         if full_path.is_file():
-            self.add_file(full_path)
+            relative = full_path.relative_to(self.cur_dir)
+            flattened_workdir = self.flatten_working_dir()
+            if str(relative) in flattened_workdir:
+                return [relative]
+            return []
+
+        relative_root = full_path.relative_to(self.cur_dir)
+        flattened_workdir = self.flatten_working_dir()
+        return [
+            Path(file_path)
+            for file_path in flattened_workdir
+            if Path(file_path) == relative_root
+            or relative_root in Path(file_path).parents
+        ]
+
+    def add_directory(self, path: str):
+        # take directory path and recursively traverse it in order to add every file in
+        for file_path in self._tracked_paths_for_add(path):
+            self.add_file(str(file_path))
+
+    def add_path(self, file_path: str) -> None:
+        full_path = (self.cur_dir / file_path).resolve()
+
+        if full_path.is_file():
+            tracked_files = self._tracked_paths_for_add(file_path)
+            if tracked_files:
+                self.add_file(str(tracked_files[0]))
         elif full_path.is_dir():
             self.add_directory(file_path)
             # search directory for all its nested files and add them
+        else:
+            raise ValueError(f"Path {file_path} Not Found")
 
     def check_index_commit_diff(
         self,
@@ -285,6 +299,7 @@ class Repository:
 
         if any(index_commit_dif.values()):
             print("Changes to be committed: ")
+
             for filename in index_commit_dif["new file"]:
                 print(f"new file: {filename}")
             for filename in index_commit_dif["modified"]:
@@ -366,17 +381,101 @@ class Repository:
                 paths[full_path] = value
         return paths
 
-    def flatten_working_dir(self):
-        result = {}
-        for file_path in self.cur_dir.rglob("*"):
-            if ".nit" in file_path.parts:  # ignore .nit folder
+    def load_ignored_paths(self):
+        dict = {}
+        common_ignorable_directories = ["node_modules", "venv", ".nit", "__pycache__"]
+        # find every .gitignore files present
+        for dirpath, dirnames, filenames in os.walk(self.cur_dir):
+            dirnames[:] = [
+                dirname
+                for dirname in dirnames
+                if dirname not in common_ignorable_directories
+            ]
+
+            if ".gitignore" not in filenames:
                 continue
-            if file_path.is_file():
-                relative = file_path.relative_to(self.cur_dir)
-                content = file_path.read_bytes()
-                blob_hash = Blob(content).hash()
-                result[str(relative)] = blob_hash
-        return result
+            else:
+                gitignore_path = Path(f"{dirpath}/.gitignore").relative_to(self.cur_dir)
+
+                ignored_files_list = gitignore_path.read_text().splitlines()
+                if ignored_files_list:
+                    dict[gitignore_path.parent] = []
+                    for path in ignored_files_list:
+                        dict[gitignore_path.parent].append(path)
+        return dict
+
+    def is_subarray(self, arr1, arr2):
+        n1, n2 = len(arr1), len(arr2)
+        if n1 == 0:
+            return True
+
+        return any(arr2[i : i + n1] == arr1 for i in range(n2 - n1 + 1))
+
+    def flatten_working_dir(self, dir: Path = None):
+        result_dict = {}
+        result_list = []
+        ignored_paths_dict = self.load_ignored_paths()
+        blocked_dirnames = [".nit"]
+        for dir_path, dirnames, filenames in os.walk(dir or self.cur_dir):
+            dirnames[:] = [
+                dirname for dirname in dirnames if dirname not in blocked_dirnames
+            ]
+            current_folder_path = Path(f"{dir_path}").relative_to(self.cur_dir)
+
+            ignored_dirnames = []  # default is nit folder
+            ignored_filenames = []
+
+            for path, list in ignored_paths_dict.items():
+                if current_folder_path.is_relative_to(path):
+                    # filter dirnames
+                    for dirname in dirnames:
+                        current_dir_path = Path(f"{current_folder_path}/{dirname}")
+
+                        for list_path in list:
+                            splitted_list_path = Path(list_path).parts
+                            if self.is_subarray(
+                                splitted_list_path, current_dir_path.parts
+                            ):
+                                ignored_dirnames.append(current_dir_path)
+
+                    # filter filenames
+                    for filename in filenames:
+                        current_file_path = Path(f"{current_folder_path}/{filename}")
+
+                        for list_path in list:
+                            splitted_list_path = Path(list_path).parts
+                            if self.is_subarray(
+                                splitted_list_path, current_file_path.parts
+                            ):
+                                ignored_filenames.append(current_file_path)
+
+            filenames[:] = [
+                filename
+                for filename in filenames
+                if Path(f"{current_folder_path}/{filename}") not in ignored_filenames
+            ]
+
+            dirnames[:] = [
+                dirname
+                for dirname in dirnames
+                if Path(f"{current_folder_path}/{dirname}") not in ignored_dirnames
+            ]
+
+            for filename in filenames:
+                file_path = Path(f"{dir_path}/{filename}")
+                if file_path.is_file():
+                    relative = file_path.relative_to(self.cur_dir)
+                    if not dir:
+                        content = file_path.read_bytes()
+                        blob_hash = Blob(content).hash()
+                        result_dict[str(relative)] = blob_hash
+                    else:
+                        result_list.append(relative)
+
+        if not dir:
+            return result_dict
+
+        return result_list
 
     def read_tree(self, tree_hash: str):
         tree_file = Path(

@@ -18,6 +18,6 @@ A real-time messaging platform built to explore the mechanics of web communicati
 
 ## 🧪 NIT - Tiny Git Clone
 
-A toy Git-like version control system built from scratch in Python to understand how source control works under the hood. Implements object storage (`blob`, `tree`, `commit`), staging/index logic, commits, status checks, branch checkout, and commit history. Installable as a local CLI tool via `pip install -e .`
+A toy Git-like version control system built from scratch in Python to understand how source control works under the hood. Implements object storage (`blob`, `tree`, `commit`), staging/index logic, commits, status checks, branch checkout, commit history, and `.gitignore`-aware file discovery for add/status. Installable as a local CLI tool via `pip install -e .`
 
 **Tech:** Python, `argparse`, `hashlib` (SHA-1), `zlib`, `pathlib`, JSON-based index storage
