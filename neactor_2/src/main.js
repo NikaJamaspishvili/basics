@@ -148,12 +148,7 @@ const element = (
         <p>hello</p> <h1 style="color: blue;">my friend</h1>
       </section>
     </>
-    <>
-      hello{" "}
-      <>
-        <div style="color:red;">how are you</div>h
-      </>
-    </>
+    <>hello </>
   </div>
 );
 
